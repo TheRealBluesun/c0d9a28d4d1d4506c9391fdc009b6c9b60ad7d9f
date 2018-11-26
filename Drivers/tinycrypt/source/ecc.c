@@ -453,7 +453,7 @@ void uECC_vli_modInv(uECC_word_t *result, const uECC_word_t *input,
 /* ------ Point operations ------ */
 
 /* Double in place */
-static void double_jacobian_secp256k1(uECC_word_t * X1,
+void double_jacobian_secp256k1(uECC_word_t * X1,
 		uECC_word_t * Y1,
 		uECC_word_t * Z1,
 		uECC_Curve curve) {
@@ -492,7 +492,7 @@ static void double_jacobian_secp256k1(uECC_word_t * X1,
 }
 
 /* Computes result = x^3 + b. result must not overlap x. */
-static void x_side_secp256k1(uECC_word_t *result, const uECC_word_t *x, uECC_Curve curve) {
+void x_side_secp256k1(uECC_word_t *result, const uECC_word_t *x, uECC_Curve curve) {
 	uECC_vli_modSquare_fast(result, x, curve);                                /* r = x^2 */
 	uECC_vli_modMult_fast(result, result, x, curve);                          /* r = x^3 */
 	uECC_vli_modAdd(result, result, curve->b, curve->p, NUM_ECC_WORDS); /* r = x^3 + b */
@@ -562,15 +562,15 @@ void x_side_default(uECC_word_t *result,
 
 uECC_Curve uECC_secp256r1(void)
 {
-	return &curve_secp256r1;
+	return (uECC_Curve)&curve_secp256r1;
 }
 
 uECC_Curve uECC_secp256k1(void)
 {
-	return &curve_secp256k1;
+	return (uECC_Curve)&curve_secp256k1;
 }
 
-static void omega_mult_secp256k1(uint32_t * result, const uint32_t * right) {
+void omega_mult_secp256k1(uECC_word_t * result, const uECC_word_t * right) {
 	/* Multiply by (2^9 + 2^8 + 2^7 + 2^6 + 2^4 + 1). */
 	uint32_t carry = 0;
 	wordcount_t k;
@@ -582,11 +582,11 @@ static void omega_mult_secp256k1(uint32_t * result, const uint32_t * right) {
 	}
 	result[NUM_ECC_WORDS] = carry;
 	/* add the 2^32 multiple */
-	result[1 + NUM_ECC_WORDS] =
-			uECC_vli_add(result + 1, result + 1, right, NUM_ECC_WORDS);
+	result[1 + NUM_ECC_WORDS] =	uECC_vli_add(result + 1, result + 1, right, NUM_ECC_WORDS);
 }
 
-static void vli_mmod_fast_secp256k1(uECC_word_t *result, uECC_word_t *product) {
+void vli_mmod_fast_secp256k1(uECC_word_t *result, uECC_word_t *product)
+{
 	uECC_word_t tmp[2 * NUM_ECC_WORDS];
 	uECC_word_t carry;
 
@@ -996,8 +996,7 @@ int uECC_valid_public_key(const uint8_t *public_key, uECC_Curve curve)
 	return uECC_valid_point(_public, curve);
 }
 
-int uECC_compute_public_key(const uint8_t *private_key, uint8_t *public_key,
-		uECC_Curve curve)
+int uECC_compute_public_key(const uint8_t *private_key, uint8_t *public_key, uECC_Curve curve)
 {
 
 	uECC_word_t _private[NUM_ECC_WORDS];

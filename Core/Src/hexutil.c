@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "string.h"
-#include "hex2bin.h"
+#include "hexutil.h"
 
 #define _T(a) L ## a
 //#define _T(a) a
@@ -21,7 +21,7 @@ static inline int is_hex(char c) {
 			((c>=_T('A') && c<=_T('F')))));
 }
 
-char *bin2hex(unsigned char *bin, char *hex, int len) {
+unsigned char *bin2hex(unsigned char *bin, unsigned char *hex, int len) {
 	int i;
 	for(i = 0; i < len; i++) {
 		unsigned char byte = *bin++;

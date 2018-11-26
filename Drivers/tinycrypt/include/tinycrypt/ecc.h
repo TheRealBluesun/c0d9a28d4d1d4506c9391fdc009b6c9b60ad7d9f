@@ -130,13 +130,9 @@ struct uECC_Curve_t {
  * @param Z1 IN/OUT -- z coordinate
  * @param curve IN -- elliptic curve
  */
-void double_jacobian_default(uECC_word_t * X1, uECC_word_t * Y1,
-		uECC_word_t * Z1, uECC_Curve curve);
+void double_jacobian_default(uECC_word_t * X1, uECC_word_t * Y1, uECC_word_t * Z1, uECC_Curve curve);
 
-static void double_jacobian_secp256k1(uECC_word_t * X1,
-		uECC_word_t * Y1,
-		uECC_word_t * Z1,
-		uECC_Curve curve);
+void double_jacobian_secp256k1(uECC_word_t * X1, uECC_word_t * Y1, uECC_word_t * Z1, uECC_Curve curve);
 
 /*
  * @brief Computes x^3 + ax + b. result must not overlap x.
@@ -147,7 +143,7 @@ static void double_jacobian_secp256k1(uECC_word_t * X1,
 void x_side_default(uECC_word_t *result, const uECC_word_t *x,
 		uECC_Curve curve);
 
-static void x_side_secp256k1(uECC_word_t *result, const uECC_word_t *x, uECC_Curve curve);
+void x_side_secp256k1(uECC_word_t *result, const uECC_word_t *x, uECC_Curve curve);
 
 /*
  * @brief Computes result = product % curve_p
@@ -156,7 +152,8 @@ static void x_side_secp256k1(uECC_word_t *result, const uECC_word_t *x, uECC_Cur
  * @param product IN -- value to be reduced mod curve_p
  */
 void vli_mmod_fast_secp256r1(unsigned int *result, unsigned int *product);
-static void vli_mmod_fast_secp256k1(uECC_word_t *result, uECC_word_t *product);
+
+void vli_mmod_fast_secp256k1(uECC_word_t *result, uECC_word_t *product);
 
 /* Bytes to words ordering: */
 #define BYTES_TO_WORDS_8(a, b, c, d, e, f, g, h) 0x##d##c##b##a, 0x##h##g##f##e
@@ -229,12 +226,14 @@ static const struct uECC_Curve_t curve_secp256k1 = {
 				BYTES_TO_WORDS_8(00, 00, 00, 00, 00, 00, 00, 00),
 				BYTES_TO_WORDS_8(00, 00, 00, 00, 00, 00, 00, 00)
 		},
-				&double_jacobian_secp256k1,
-				&x_side_secp256k1,
-				&vli_mmod_fast_secp256k1
+		&double_jacobian_secp256k1,
+		&x_side_secp256k1,
+		&vli_mmod_fast_secp256k1
 };
 
 uECC_Curve uECC_secp256r1(void);
+
+uECC_Curve uECC_secp256k1(void);
 
 /*
  * @brief Generates a random integer in the range 0 < random < top.

@@ -65,8 +65,9 @@
 #include <tinycrypt/constants.h>
 #include <tinycrypt/sha256.h>
 #include "sha3.h"
-#include "hex2bin.h"
 #include "prvkey.h"
+#include "ethutil.h"
+#include "hexutil.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -237,10 +238,10 @@ void StartDefaultTask(void * argument)
 	uint8_t prv_bytes[NUM_ECC_BYTES];
 
 	// Create the key-pair
-//	if(!uECC_make_key(pub_bytes, prv_bytes, uECC_secp256r1()))
-//	{
-//		Error_Handler();
-//	}
+	//	if(!uECC_make_key(pub_bytes, prv_bytes, uECC_secp256r1()))
+	//	{
+	//		Error_Handler();
+	//	}
 
 	int len = 0;
 	hex2bin(PRV_KEY, prv_bytes, 0, &len);
@@ -251,19 +252,15 @@ void StartDefaultTask(void * argument)
 		Error_Handler();
 	}
 
+	uint8_t addr_str[43] = {0};
+
 	// Create ETH address from key
-	uint8_t address[41] = {0};
-	uint8_t *pub_hash;
-	sha3_Init256(&g_sha3c);
-	sha3_Update(&g_sha3c, pub_bytes, sizeof(pub_bytes));
-	pub_hash = sha3_Finalize(&g_sha3c);
-	bin2hex(pub_hash+12, address, 20);
+	ethAddrFromPubkey(pub_bytes, addr_str);
 
 
 	uint8_t hash[NUM_ECC_BYTES];
 	uint8_t sig[2*NUM_ECC_BYTES];
 
-	default_CSPRNG(hash, sizeof(hash));
 
 	for(;;)
 	{
@@ -271,17 +268,17 @@ void StartDefaultTask(void * argument)
 		HAL_GPIO_WritePin(LD_G_GPIO_Port, LD_G_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(LD_R_GPIO_Port, LD_R_Pin, GPIO_PIN_RESET);
 
+
+		HAL_GPIO_WritePin(LD_R_GPIO_Port, LD_R_Pin, GPIO_PIN_SET);
+
 		if(!uECC_sign(prv_bytes, hash, sizeof(hash), sig, g_curve ))
 		{
 			Error_Handler();
 		}
-
-		HAL_GPIO_WritePin(LD_R_GPIO_Port, LD_R_Pin, GPIO_PIN_SET);
-
-		if(!uECC_verify(pub_bytes, hash, sizeof(hash), sig, g_curve))
-		{
-			Error_Handler();
-		}
+		//		if(!uECC_verify(pub_bytes, hash, sizeof(hash), sig, g_curve))
+		//		{
+		//			Error_Handler();
+		//		}
 
 		HAL_GPIO_WritePin(LD_G_GPIO_Port, LD_G_Pin, GPIO_PIN_SET);
 
