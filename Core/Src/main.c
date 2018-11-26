@@ -188,18 +188,11 @@ int main(void)
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
 
-	//  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-	//  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-	BaseType_t result;
-	result =  xTaskCreate(StartDefaultTask, "start task", 512, NULL, 5, &g_taskHandle);
+	BaseType_t result =  xTaskCreate(StartDefaultTask, "start task", 512, NULL, 5, &g_taskHandle);
 
 	if(result != pdPASS)
 	{
-		while(1)
-		{
-			//bad stuff :-(
-		}
-
+		Error_Handler();
 	}
 
 	/* USER CODE BEGIN RTOS_THREADS */
@@ -229,38 +222,32 @@ void StartDefaultTask(void * argument)
 {
 
 	/* USER CODE BEGIN 5 */
-	/* Infinite loop */
-	//	uECC_RNG_Function rng = &rngFunc;
 	uECC_set_rng(&default_CSPRNG);
 	g_curve = uECC_secp256k1();
 
 	uint8_t pub_bytes[2*NUM_ECC_BYTES];
 	uint8_t prv_bytes[NUM_ECC_BYTES];
+	uint8_t addr_str[43];
+	uint8_t hash[NUM_ECC_BYTES];
+	uint8_t sig[2*NUM_ECC_BYTES];
 
-	// Create the key-pair
-	//	if(!uECC_make_key(pub_bytes, prv_bytes, uECC_secp256r1()))
-	//	{
-	//		Error_Handler();
-	//	}
-
-	int len = 0;
-	hex2bin(PRV_KEY, prv_bytes, 0, &len);
-
+#ifdef PRV_KEY
+	hex2bin(PRV_KEY, prv_bytes, 2*NUM_ECC_BYTES, NULL);
+#else
+	//Create the key-pair
+	if(!uECC_make_key(pub_bytes, prv_bytes, g_curve))
+	{
+		Error_Handler();
+	}
+#endif
 
 	if(!uECC_compute_public_key(prv_bytes, pub_bytes, g_curve))
 	{
 		Error_Handler();
 	}
 
-	uint8_t addr_str[43] = {0};
-
 	// Create ETH address from key
 	ethAddrFromPubkey(pub_bytes, addr_str);
-
-
-	uint8_t hash[NUM_ECC_BYTES];
-	uint8_t sig[2*NUM_ECC_BYTES];
-
 
 	for(;;)
 	{
@@ -268,18 +255,16 @@ void StartDefaultTask(void * argument)
 		HAL_GPIO_WritePin(LD_G_GPIO_Port, LD_G_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(LD_R_GPIO_Port, LD_R_Pin, GPIO_PIN_RESET);
 
-
-		HAL_GPIO_WritePin(LD_R_GPIO_Port, LD_R_Pin, GPIO_PIN_SET);
-
 		if(!uECC_sign(prv_bytes, hash, sizeof(hash), sig, g_curve ))
 		{
 			Error_Handler();
 		}
-		//		if(!uECC_verify(pub_bytes, hash, sizeof(hash), sig, g_curve))
-		//		{
-		//			Error_Handler();
-		//		}
+		HAL_GPIO_WritePin(LD_R_GPIO_Port, LD_R_Pin, GPIO_PIN_SET);
 
+		if(!uECC_verify(pub_bytes, hash, sizeof(hash), sig, g_curve))
+		{
+			Error_Handler();
+		}
 		HAL_GPIO_WritePin(LD_G_GPIO_Port, LD_G_Pin, GPIO_PIN_SET);
 
 		//		BSP_EPD_DisplayStringAt(0, 0, "Test 1234567890", CENTER_MODE );
@@ -300,12 +285,13 @@ int default_CSPRNG(uint8_t *dest, unsigned int size)
 	{
 		HAL_RNG_GenerateRandomNumber(&hrng, &num);
 
-		if(remaining_bytes >=4)
+		if(remaining_bytes >= 4)
 		{
 			memcpy(dest+idx, &num, 4);
 			remaining_bytes -= 4;
 			idx +=4;
-		}else
+		}
+		else
 		{
 			memcpy(dest+idx, &num, remaining_bytes);
 			remaining_bytes = 0;
